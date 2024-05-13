@@ -1,0 +1,10 @@
+google-api-python-client==2.124.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
+gspread==6.1.0
+matplotlib==3.8.3
+PyQt5==5.15.10
+PyQt6==6.6.1
+numpy==1.26.4
+pandas==2.2.1
+scipy==1.12.0
