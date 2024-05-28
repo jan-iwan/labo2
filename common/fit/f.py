@@ -86,3 +86,11 @@ fabry_perot2 = Function(
     _fabry_perot,
     ["x_0", "a", "R", "alpha", "lambda"]
 )
+
+
+cos_sq = Function(
+    lambda theta, A, theta_0:
+        A * np.cos(theta - theta_0) ** 2,
+    ["A", "theta_0"],
+    r"$A \cos^2(\theta - \theta_0)$"
+)

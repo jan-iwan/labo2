@@ -1,6 +1,11 @@
-import matplotlib.pyplot as plt
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import figure  # For type 'Figure'
+from matplotlib.lines import Line2D
+from matplotlib.widgets import Slider
+from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -8,13 +13,18 @@ opt_show_plots = False
 
 plt.rcParams.update({"font.size": 14})
 
+Slider = Slider
+
+
 def save(*args, **kwargs):
-    logger.info(f"Saving figure '{args[0]}'.")
     plt.tight_layout()
-    plt.savefig(*args, bbox_inches='tight', **kwargs)
+
+    if args != ():
+        logger.info(f"Saving figure '{args[0]}'.")
+        plt.savefig(*args, bbox_inches='tight', **kwargs)
 
     if opt_show_plots:
-        logger.info(f"Showing plot por '{args[0]}'.")
+        logger.info("Showing plot")
         plt.show()
 
     plt.close()
@@ -50,7 +60,7 @@ def data(
     ylabel: str = None,
     figsize=(8, 6),
     **kwargs
-):
+) -> tuple[figure.Figure, Any]:
     """
     Plot data with errors.
     """
@@ -60,7 +70,7 @@ def data(
         *kwargs
     )
 
-    ax.errorbar(x_data, y_data, yerr=y_error, fmt="o", label=label)
+    lines = ax.errorbar(x_data, y_data, yerr=y_error, fmt="o", label=label)
 
     ax.set(xlabel=xlabel if xlabel is not None else x_data.name)
     ax.set(ylabel=ylabel if ylabel is not None else y_data.name)
@@ -69,7 +79,7 @@ def data(
     if label is not None:
         ax.legend()
 
-    return
+    return fig, ax
 
 
 def data_polar(
@@ -121,6 +131,7 @@ def data_and_fit(
     y_data,
     y_error,
     y_fit,
+    x_error=None,
     title: str = None,
     label: str = "Datos",
     fitlabel: str = None,
@@ -148,6 +159,7 @@ def data_and_fit(
         x_data,
         y_data,
         yerr=y_error,
+        xerr=x_error,
         fmt=".",
         label=label
     )

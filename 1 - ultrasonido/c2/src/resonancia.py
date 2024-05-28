@@ -46,15 +46,22 @@ def main(path: Path) -> None:
         }
     )
 
-    # Plot result
-    fit_found = f.f(freq_sent, *param_opt)
-    plot.data_and_fit(
+    plot.data(
         freq_sent,
         freq_recv,
         error,
-        fit_found,
-        xlabel=cols[0],
-        ylabel=cols[1]
+        figsize=(10, 8)
     )
+
+    # Plot result
+    # fit_found = f.f(freq_sent, *param_opt)
+    # plot.data_and_fit(
+    #     freq_sent,
+    #     freq_recv,
+    #     error,
+    #     fit_found,
+    #     xlabel=cols[0],
+    #     ylabel=cols[1]
+    # )
 
     plot.save(path/f"plots/{__name__}.png")

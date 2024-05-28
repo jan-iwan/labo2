@@ -40,7 +40,7 @@ def main(path: Path) -> None:
         freq_sent[3:-3],
         freq_recv[3:-3] / 1000,
         error[3:-3] / 1000,
-        figsize=(8, 5),
+        figsize=(10, 8),
         ylabel="Amplitud [Vpp]"
     )
 

@@ -15,8 +15,8 @@ def main() -> None:
     # What to do
     match arg[0]:
         case "resonancia":
-            from src import interferencia
-            interferencia.main(base_path)
+            from src import resonancia
+            resonancia.main(base_path)
 
         case "amplitud":
             from src import amplitud
