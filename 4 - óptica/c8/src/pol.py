@@ -5,6 +5,7 @@ import numpy as np
 CELL_RANGE = "A2:G21"
 WORKSHEET = "DETECTOR"
 
+
 def main(path: Path, args: list[str]) -> None:
     # Find dataframe
     df = data.find(
