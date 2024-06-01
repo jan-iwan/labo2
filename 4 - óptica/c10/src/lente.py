@@ -26,14 +26,17 @@ def main(path: Path, args: list[str]) -> None:
 
     lente = df["Posición la lente [mm]"]
     obj = 40 - lente
-    img = df["Posición de la pantalla [mm]"] - lente
+
+    img = df["Posición de la pantalla [mm]"]
+    img -= lente
+
     error_img = 15
 
     indirect_err = error_img / img ** 2
 
     f = fit.f.linear
 
-    fit_found, _ = fit.utils.fitnsave(
+    y_fit, _ = fit.utils.fitnsave(
         path/f"results/{__name__}.csv",
         f,
         1/obj,
@@ -41,12 +44,12 @@ def main(path: Path, args: list[str]) -> None:
         yerr=indirect_err
     )
 
-    # ax.plot(1/obj, f.f(1/obj, *p_opt))
     plot.data_and_fit(
         1/obj,
         1/img,
         indirect_err,
-        fit_found
+        y_fit,
+        saveto=path/f"plots/{__name__}.png",
+        xlabel=r"Inversa de la posición del objeto [mm$^{-1}$]",
+        ylabel=r"Inversa de la posición de la imagen [mm$^{-1}$]",
     )
-
-    plot.save(path/f"plots/{__name__}.png")

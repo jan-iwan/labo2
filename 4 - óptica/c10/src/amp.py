@@ -37,6 +37,5 @@ def main(path: Path, args: list[str]) -> None:
         intensidad,
         error,
         fit_found,
+        saveto=path/f"plots/{__name__}.png"
     )
-
-    plot.save()

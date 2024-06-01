@@ -39,5 +39,3 @@ def main(path: Path, angle, volt, error) -> None:
         fit_found,
         x_error=1
     )
-
-    plot.save()

@@ -32,7 +32,6 @@ def main(path: Path, erf) -> None:
         pos,
         volt,
         error,
-        fit_found
+        fit_found,
+        saveto=path/f"plots/{__name__}.png"
     )
-
-    plot.save()

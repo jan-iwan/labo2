@@ -1,4 +1,4 @@
-from common import data, plot
+from common import data, plot, fit
 from pathlib import Path
 import numpy as np
 
@@ -6,7 +6,7 @@ CELL_RANGE = "A2:E16"
 WORKSHEET = "BIENPERFIL 0.37m"
 
 
-def main(path: Path) -> None:
+def main(path: Path, erf) -> None:
     # Find dataframe
     df = data.find(
         path,
@@ -17,7 +17,21 @@ def main(path: Path) -> None:
 
     pos = df["Posición [mm]"]
     volt = df["Voltaje [V]"]
-    # error =
+    error = df["Error intens"]
 
-    plot.data(pos, volt, 0)
-    plot.save()
+    fit_found, _ = fit.utils.fitnsave(
+        path/f"results/{__name__}.csv",
+        erf,
+        pos,
+        volt,
+        yerr=error,
+        p0=[100]
+    )
+
+    plot.data_and_fit(
+        pos,
+        volt,
+        error,
+        fit_found,
+        saveto=path/f"plots/{__name__}.png"
+    )

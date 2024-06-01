@@ -1,11 +1,9 @@
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import figure  # For type 'Figure'
-from matplotlib.lines import Line2D
-from matplotlib.widgets import Slider
+from matplotlib.figure import Figure
 from typing import Any
-
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -13,15 +11,15 @@ opt_show_plots = False
 
 plt.rcParams.update({"font.size": 14})
 
-Slider = Slider
+DEFAULT_FIGSIZE = (8, 6)
 
 
-def save(*args, **kwargs):
+def save(filename, **kwargs):
     plt.tight_layout()
 
-    if args != ():
-        logger.info(f"Saving figure '{args[0]}'.")
-        plt.savefig(*args, bbox_inches='tight', **kwargs)
+    if filename is not None:
+        logger.info(f"Saving figure '{filename}'.")
+        plt.savefig(filename, **kwargs)
 
     if opt_show_plots:
         logger.info("Showing plot")
@@ -53,31 +51,147 @@ def get_units(label: str) -> str:
 def data(
     x_data,
     y_data,
-    y_error,
-    title: str = None,
+    error,
+    fmt=".",
+    nosave=False,
+    saveto: Path = None,
     label: str = None,
     xlabel: str = None,
     ylabel: str = None,
-    figsize=(8, 6),
+    figsize=DEFAULT_FIGSIZE,
     **kwargs
-) -> tuple[figure.Figure, Any]:
+) -> tuple[Figure, Any]:
     """
     Plot data with errors.
     """
 
+    # if y_data is a list of y_datas, create a subplot with as many rows as
+    # there are elements in the list.
+    rows = 1 if not isinstance(y_data, list) else len(y_data)
+    cols = 1
+
     fig, ax = plt.subplots(
+        rows,
+        cols,
         figsize=figsize,
-        *kwargs
+        sharex=False if rows == 1 else True,
+        **kwargs
     )
 
-    lines = ax.errorbar(x_data, y_data, yerr=y_error, fmt="o", label=label)
+    # error may be (x_err, y_err) or just y_err
+    xerr, yerr = error if isinstance(error, tuple) else None, error
+
+    ax.errorbar(
+        x_data,
+        y_data,
+        x_err=xerr,
+        yerr=yerr,
+        fmt=fmt,
+        label=label
+    )
 
     ax.set(xlabel=xlabel if xlabel is not None else x_data.name)
     ax.set(ylabel=ylabel if ylabel is not None else y_data.name)
-    ax.grid()
+
+    ax.grid(True)
 
     if label is not None:
         ax.legend()
+
+    if not nosave:
+        save(saveto)
+
+    return fig, ax
+
+
+def plot_residue(
+    x_data,
+    residue,
+    yerr,
+    xlabel: str = None,
+    ylabel: str = None,
+    saveto: Path = None
+):
+    fig_res, ax_res = plt.subplots(
+        figsize=DEFAULT_FIGSIZE
+    )
+
+    ax_res.errorbar(x_data, residue, yerr=yerr, fmt=".")
+
+    ylabel = f"Residuos {get_units(ylabel)}"
+
+    ax_res.set(xlabel=xlabel)
+    ax_res.set(ylabel=ylabel)
+
+    ax_res.grid(True)
+
+    ax_res.axhline(0, color="black")
+
+    if saveto is not None:
+        # Append '-residue' to path to save figure
+        saveto = saveto.parent / f"{saveto.stem}-residue{saveto.suffix}"
+
+        logger.info(f"Saving residue plot to '{saveto}'")
+
+    save(saveto)
+
+
+def data_and_fit(
+    x_data,
+    y_data,
+    error,
+    y_fit,
+    nosave=False,
+    saveto: Path = None,
+    datalabel: str = "Mediciones",
+    fitlabel: str = "Ajuste",
+    xlabel: str = None,
+    ylabel: str = None,
+    figsize=DEFAULT_FIGSIZE,
+    **kwargs
+):
+    """
+    Plot data, fit and residue.
+    """
+
+    fig, ax = data(
+        x_data,
+        y_data,
+        error,
+        nosave=True,
+        label=datalabel,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        **kwargs,
+    )
+
+    # Plot fit in 'ax' (on top of the data)
+    ax.plot(
+        x_data,
+        y_fit,
+        label=fitlabel
+    )
+
+    if fitlabel is not None:
+        ax.legend()
+
+    if not nosave:
+        save(saveto)
+
+    # Plot residue separately
+
+    residue = y_fit - y_data
+
+    reserr = error[1] if isinstance(error, tuple) else error,
+
+    plot_residue(
+        x_data,
+        residue,
+        reserr,
+        xlabel=xlabel if xlabel is not None else x_data.name,
+        ylabel=ylabel if ylabel is not None else y_data.name,
+        saveto=saveto
+    )
 
     return fig, ax
 
@@ -89,7 +203,7 @@ def data_polar(
     terr=None,
     title: str = None,
     label: str = None,
-    figsize=(8, 6),
+    figsize=DEFAULT_FIGSIZE,
     rorigin=None,
     rlabel=None,
     **kwargs
@@ -124,63 +238,3 @@ def data_polar(
         ax.legend()
 
     return
-
-
-def data_and_fit(
-    x_data,
-    y_data,
-    y_error,
-    y_fit,
-    x_error=None,
-    title: str = None,
-    label: str = "Datos",
-    fitlabel: str = None,
-    xlabel: str = None,
-    ylabel: str = "Ajuste",
-    figsize=(8, 6),
-    nofit=False,
-    **kwargs
-):
-    """
-    Plot data, fit and residue.
-    """
-
-    fig, ax = plt.subplots(
-        2,
-        1,
-        sharex=True,
-        figsize=figsize,
-        gridspec_kw={"height_ratios": (2, 1)},
-        *kwargs
-    )
-
-    # Graph data and fit (y_fit) on top of each other
-    ax[0].errorbar(
-        x_data,
-        y_data,
-        yerr=y_error,
-        xerr=x_error,
-        fmt=".",
-        label=label
-    )
-
-    if not nofit:
-        ax[0].plot(x_data, y_fit, label=fitlabel)
-
-    # Graph differences between measurement and prediction (fit) in a
-    # separate subplot
-    residue = y_fit - y_data
-    ax[1].errorbar(x_data, residue, yerr=y_error, fmt=".")
-
-    # Change looks for each subplot
-    ax[0].set_title(title)
-    ax[0].set(ylabel=ylabel if ylabel is not None else y_data.name)
-    ax[0].legend()
-    ax[0].grid()
-
-    ax[1].set(xlabel=xlabel if xlabel is not None else x_data.name)
-    ax[1].set(ylabel="Residuos")
-    ax[1].axhline(0, color="black")
-    ax[1].grid()
-
-    return fig, ax

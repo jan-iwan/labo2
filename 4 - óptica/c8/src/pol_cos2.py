@@ -20,6 +20,5 @@ def main(path: Path, angle, volt, error) -> None:
         volt,
         error,
         volt_fit,
+        saveto=path/f"plots/{__name__}.png"
     )
-
-    plot.save(path/f"plots/{__name__}.png")
