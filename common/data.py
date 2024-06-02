@@ -95,9 +95,10 @@ def find(
 
 
 def save(
-    path: Path | str,
     data: dict,
-    sheet: str = None
+    filename: Path | str = None,
+    append: str = None
+    # sheet: str = None
 ) -> None:
     """
     Simple wrapper to save results.
@@ -106,15 +107,25 @@ def save(
     # Convert dictionary to dataframe
     df = pd.DataFrame(data)
 
-    logger.info(f"Saving file '{path}")
+    if filename is None:
+        path, name = get_caller_name()
+
+        filename = path / f"results/{name}.csv"
+
+    if append is not None:
+        new_name = f"{filename.stem}-{append}"
+
+        filename = filename.parent / f"{new_name}.csv"
+
+    logger.info(f"Saving file '{filename}")
 
     if opt_show_dataframe:
-        print("Showing results dataframe:")
+        print(f"Showing '{filename}' results dataframe:")
         print(df)
 
     # Save
     df.to_csv(
-        path,
+        filename,
         index=False
     )
 

@@ -20,7 +20,6 @@ def main(path: Path, erf) -> None:
     error = df["Error intens"]
 
     fit_found, _ = fit.utils.fitnsave(
-        path/f"results/{__name__}.csv",
         erf,
         pos,
         volt,
@@ -33,5 +32,4 @@ def main(path: Path, erf) -> None:
         volt,
         error,
         fit_found,
-        saveto=path/f"plots/{__name__}.png"
     )

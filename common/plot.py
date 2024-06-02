@@ -31,7 +31,7 @@ def save(
 
     if append is not None:
         filename = filename.parent / \
-            f"{filename.stem}-residue{filename.suffix}"
+            f"{filename.stem}-{append}{filename.suffix}"
 
     logger.info(f"Saving figure '{filename}'.")
     plt.savefig(filename, **kwargs)
@@ -127,6 +127,9 @@ def data(
         # error may be (x_err, y_err) or just y_err
         xerr, yerr = error if isinstance(error, tuple) else None, error
 
+        xlabel = xlabel if xlabel is not None else x_data.name
+        ylabel = ylabel if ylabel is not None else y_data.name
+
         _plot_errorbar(
             ax,
             x_data, y_data,
@@ -136,6 +139,8 @@ def data(
 
     # There may be multiple y_data
     else:
+        logger.warning(f"Plotting {rows} rows.")
+
         for i in range(rows):
             # error may be (x_err, y_err) or just y_err
             err = error[i]
@@ -152,33 +157,6 @@ def data(
         save(saveto)
 
     return fig, ax
-
-
-def _plot_residue(
-    x_data,
-    residue,
-    yerr,
-    xlabel: str = None,
-    ylabel: str = None,
-    saveto: Path = None
-):
-    fig_res, ax_res = plt.subplots(
-        figsize=DEFAULT_FIGSIZE
-    )
-
-    ax_res.errorbar(x_data, residue, yerr=yerr, fmt=".")
-
-    ylabel = f"Residuos {get_units(ylabel)}"
-
-    ax_res.set(xlabel=xlabel)
-    ax_res.set(ylabel=ylabel)
-
-    ax_res.grid(True)
-
-    ax_res.axhline(0, color="black")
-
-    # Append '-residue' to path to save figure
-    save(saveto, append="residue")
 
 
 def data_and_fit(
@@ -198,6 +176,9 @@ def data_and_fit(
     """
     Plot data, fit and residue.
     """
+
+    xlabel = xlabel if xlabel is not None else x_data.name
+    ylabel = ylabel if ylabel is not None else y_data.name
 
     fig, ax = data(
         x_data,
@@ -221,22 +202,31 @@ def data_and_fit(
         ax.legend()
 
     if not noshow:
-        save(saveto)
+        save(saveto, append="fit")
 
     # Plot residue separately
 
-    residue = y_fit - y_data
-
-    reserr = error[1] if isinstance(error, tuple) else error,
-
-    _plot_residue(
-        x_data,
-        residue,
-        reserr,
-        xlabel=xlabel if xlabel is not None else x_data.name,
-        ylabel=ylabel if ylabel is not None else y_data.name,
-        saveto=saveto
+    fig_res, ax_res = plt.subplots(
+        figsize=DEFAULT_FIGSIZE
     )
+
+    ax_res.errorbar(
+        x_data,
+        y_fit - y_data,  # residue
+        yerr=error[1] if isinstance(error, tuple) else error,
+        fmt=".")
+
+    ylabel = f"Residuos {get_units(ylabel)}"
+
+    ax_res.set(xlabel=xlabel)
+    ax_res.set(ylabel=ylabel)
+
+    ax_res.grid(True)
+
+    ax_res.axhline(0, color="black")
+
+    # Append '-residue' to path to save figure
+    save(saveto, append="residue")
 
     return fig, ax
 

@@ -91,10 +91,10 @@ def result(
 
 
 def fitnsave(
-    path: Path | str,
     func: f.Function,
     x_data,
     y_data,
+    saveto: Path | str = None,
     p0=None,
     yerr=None
 ):
@@ -133,6 +133,6 @@ def fitnsave(
     )
 
     # Save result to disk
-    data.save(path, res)
+    data.save(res, filename=saveto)
 
     return y_fit, (p_opt, p_err)

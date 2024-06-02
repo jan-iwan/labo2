@@ -25,7 +25,6 @@ def main(path: Path, angle, volt, error) -> None:
     f = fit.f.linear
 
     fit_found, _ = fit.utils.fitnsave(
-        path/f"results/{__name__}.csv",
         f,
         x,
         volt,

@@ -7,7 +7,6 @@ def main(path: Path, angle, volt, error) -> None:
     f = fit.f.cos_sq
 
     volt_fit, (p_opt, _) = fit.utils.fitnsave(
-        path/f"results/{__name__}.csv",
         f,
         angle,
         volt,
@@ -20,5 +19,4 @@ def main(path: Path, angle, volt, error) -> None:
         volt,
         error,
         volt_fit,
-        saveto=path/f"plots/{__name__}.png"
     )

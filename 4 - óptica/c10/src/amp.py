@@ -25,7 +25,6 @@ def main(path: Path, args: list[str]) -> None:
     f = fit.f.linear
 
     fit_found, _ = fit.utils.fitnsave(
-        path/f"results/{__name__}.csv",
         f,
         area,
         intensidad,

@@ -32,6 +32,7 @@ def main(path: Path, args: list[str]) -> None:
 
     error_img = 15
 
+    # Multiply by 1000 to convert mm -> m
     inv_obj = 1000 / obj
     inv_img = 1000 / img
 
@@ -40,7 +41,6 @@ def main(path: Path, args: list[str]) -> None:
     f = fit.f.linear
 
     y_fit, _ = fit.utils.fitnsave(
-        path/f"results/{__name__}.csv",
         f,
         inv_obj,
         inv_img,
