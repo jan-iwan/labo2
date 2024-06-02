@@ -32,6 +32,9 @@ def main(path: Path, args: list[str]) -> None:
 
     error_img = 15
 
+    inv_obj = 1000 / obj
+    inv_img = 1000 / img
+
     indirect_err = error_img / img ** 2
 
     f = fit.f.linear
@@ -39,17 +42,16 @@ def main(path: Path, args: list[str]) -> None:
     y_fit, _ = fit.utils.fitnsave(
         path/f"results/{__name__}.csv",
         f,
-        1/obj,
-        1/img,
+        inv_obj,
+        inv_img,
         yerr=indirect_err
     )
 
     plot.data_and_fit(
-        1/obj,
-        1/img,
+        inv_obj,
+        inv_img,
         indirect_err,
         y_fit,
-        saveto=path/f"plots/{__name__}.png",
-        xlabel=r"Inversa de la posición del objeto [mm$^{-1}$]",
-        ylabel=r"Inversa de la posición de la imagen [mm$^{-1}$]",
+        xlabel=r"Inversa de la posición del objeto [m$^{-1}$]",
+        ylabel=r"Inversa de la posición de la imagen [m$^{-1}$]",
     )

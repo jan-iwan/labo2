@@ -1,3 +1,4 @@
+from common.data import get_caller_name
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,21 +6,35 @@ from matplotlib.figure import Figure
 from typing import Any
 from pathlib import Path
 
+DEFAULT_EXT = "png"
+
+DEFAULT_FIGSIZE = (8, 6)
+
 logger = logging.getLogger(__name__)
 
 opt_show_plots = False
 
 plt.rcParams.update({"font.size": 14})
 
-DEFAULT_FIGSIZE = (8, 6)
 
-
-def save(filename, **kwargs):
+def save(
+    filename,
+    append: str = None,
+    **kwargs
+):
     plt.tight_layout()
 
-    if filename is not None:
-        logger.info(f"Saving figure '{filename}'.")
-        plt.savefig(filename, **kwargs)
+    if filename is None:
+        path, name = get_caller_name()
+
+        filename = path / f"plots/{name}.{DEFAULT_EXT}"
+
+    if append is not None:
+        filename = filename.parent / \
+            f"{filename.stem}-residue{filename.suffix}"
+
+    logger.info(f"Saving figure '{filename}'.")
+    plt.savefig(filename, **kwargs)
 
     if opt_show_plots:
         logger.info("Showing plot")
@@ -48,39 +63,17 @@ def get_units(label: str) -> str:
         return ""
 
 
-def data(
+def _plot_errorbar(
+    ax,
     x_data,
     y_data,
-    error,
-    fmt=".",
-    nosave=False,
-    saveto: Path = None,
-    label: str = None,
-    xlabel: str = None,
-    ylabel: str = None,
-    figsize=DEFAULT_FIGSIZE,
-    **kwargs
-) -> tuple[Figure, Any]:
-    """
-    Plot data with errors.
-    """
-
-    # if y_data is a list of y_datas, create a subplot with as many rows as
-    # there are elements in the list.
-    rows = 1 if not isinstance(y_data, list) else len(y_data)
-    cols = 1
-
-    fig, ax = plt.subplots(
-        rows,
-        cols,
-        figsize=figsize,
-        sharex=False if rows == 1 else True,
-        **kwargs
-    )
-
-    # error may be (x_err, y_err) or just y_err
-    xerr, yerr = error if isinstance(error, tuple) else None, error
-
+    xerr,
+    yerr,
+    fmt,
+    label,
+    xlabel,
+    ylabel
+):
     ax.errorbar(
         x_data,
         y_data,
@@ -98,13 +91,70 @@ def data(
     if label is not None:
         ax.legend()
 
-    if not nosave:
+
+def data(
+    x_data,
+    y_data,
+    error,
+    fmt=".",
+    noshow=False,
+    saveto: Path = None,
+    label: str = None,
+    xlabel: str = None,
+    ylabel: str = None,
+    figsize=DEFAULT_FIGSIZE,
+    **kwargs
+) -> tuple[Figure, Any]:
+    """
+    Plot data with errors.
+    """
+
+    # There may be multiple y_data
+    # if y_data is a list of y_datas, create a subplot with as many rows as
+    # there are elements in the list.
+    rows = 1 if not isinstance(y_data, list) else len(y_data)
+    cols = 1
+
+    fig, ax = plt.subplots(
+        rows,
+        cols,
+        figsize=figsize,
+        sharex=False if rows == 1 else True,
+        **kwargs
+    )
+
+    if rows == 1:
+        # error may be (x_err, y_err) or just y_err
+        xerr, yerr = error if isinstance(error, tuple) else None, error
+
+        _plot_errorbar(
+            ax,
+            x_data, y_data,
+            xerr, yerr,
+            fmt, label, xlabel, ylabel
+        )
+
+    # There may be multiple y_data
+    else:
+        for i in range(rows):
+            # error may be (x_err, y_err) or just y_err
+            err = error[i]
+            xerr, yerr = err if isinstance(err[i], tuple) else None, err
+
+            _plot_errorbar(
+                ax[i],
+                x_data[i], y_data[i],
+                xerr, yerr,
+                fmt, label, xlabel, ylabel
+            )
+
+    if not noshow:
         save(saveto)
 
     return fig, ax
 
 
-def plot_residue(
+def _plot_residue(
     x_data,
     residue,
     yerr,
@@ -127,13 +177,8 @@ def plot_residue(
 
     ax_res.axhline(0, color="black")
 
-    if saveto is not None:
-        # Append '-residue' to path to save figure
-        saveto = saveto.parent / f"{saveto.stem}-residue{saveto.suffix}"
-
-        logger.info(f"Saving residue plot to '{saveto}'")
-
-    save(saveto)
+    # Append '-residue' to path to save figure
+    save(saveto, append="residue")
 
 
 def data_and_fit(
@@ -141,7 +186,7 @@ def data_and_fit(
     y_data,
     error,
     y_fit,
-    nosave=False,
+    noshow=False,
     saveto: Path = None,
     datalabel: str = "Mediciones",
     fitlabel: str = "Ajuste",
@@ -158,7 +203,7 @@ def data_and_fit(
         x_data,
         y_data,
         error,
-        nosave=True,
+        noshow=True,
         label=datalabel,
         xlabel=xlabel,
         ylabel=ylabel,
@@ -175,7 +220,7 @@ def data_and_fit(
     if fitlabel is not None:
         ax.legend()
 
-    if not nosave:
+    if not noshow:
         save(saveto)
 
     # Plot residue separately
@@ -184,7 +229,7 @@ def data_and_fit(
 
     reserr = error[1] if isinstance(error, tuple) else error,
 
-    plot_residue(
+    _plot_residue(
         x_data,
         residue,
         reserr,
