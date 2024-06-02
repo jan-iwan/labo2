@@ -32,7 +32,7 @@ def find(
             absolute_sigma=True
         )
     except RuntimeError as e:
-        logger.error("Failed to fit function.")
+        logger.error("Failed to fit function :(.")
         logger.error(e)
         sys.exit(1)
 
@@ -69,13 +69,15 @@ def result(
 ) -> list[dict]:
     # Fit statistics
     stats = {
-        "Chi^2_red": f"{chi:.4f}",
-        "R^2": f"{r_sq:.4f}",
+        "Chi^2 red": f"{chi}",
+        "R^2": f"{r_sq}",
+    } if chi is not None else {
+        "R^2": f"{r_sq}",
     }
 
-    # Parameters' mean and error
+    # Mean and error of parameters
     params = {
-        p: f"{opt:.4f} ± {err:.4f}"
+        p: f"{opt} ± {err}"
         for p, opt, err
         in zip(func.params, p_opt, p_err)
     }
@@ -115,12 +117,13 @@ def fitnsave(
 
     residue = y_fit - y_data
 
+    # chi squared is only relevant for lineal fits
     chi_sq_red = chi2_r(
         residue,
         yerr,
         len(residue),
         len(p_opt)
-    )
+    ) if func is f.linear else None
 
     r_sq = r2(y_data, residue)
 

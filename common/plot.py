@@ -2,9 +2,14 @@ from common.data import get_caller_name
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+
+# Types
+from pandas.core.series import Series
 from matplotlib.figure import Figure
 from typing import Any
 from pathlib import Path
+
+SAVE_DIR = "plots"
 
 DEFAULT_EXT = "png"
 
@@ -24,10 +29,13 @@ def save(
 ):
     plt.tight_layout()
 
+    # Default save location
     if filename is None:
         path, name = get_caller_name()
 
-        filename = path / f"plots/{name}.{DEFAULT_EXT}"
+        stem = f"{name}.{DEFAULT_EXT}"
+
+        filename = path / SAVE_DIR / stem
 
     if append is not None:
         filename = filename.parent / \
@@ -63,28 +71,39 @@ def get_units(label: str) -> str:
         return ""
 
 
+def _data_name(data):
+    if isinstance(data, Series):
+        return data.name
+
+    else:
+        logger.warning("Label not specified")
+        return None
+
+
 def _plot_errorbar(
     ax,
     x_data,
     y_data,
-    xerr,
-    yerr,
+    error,
     fmt,
     label,
     xlabel,
     ylabel
 ):
+    # error may be (x_err, y_err) or just y_err
+    (xerr, yerr) = error if isinstance(error, tuple) else (None, error)
+
     ax.errorbar(
         x_data,
         y_data,
-        x_err=xerr,
+        xerr=xerr,
         yerr=yerr,
         fmt=fmt,
         label=label
     )
 
-    ax.set(xlabel=xlabel if xlabel is not None else x_data.name)
-    ax.set(ylabel=ylabel if ylabel is not None else y_data.name)
+    ax.set(xlabel=xlabel if xlabel is not None else _data_name(x_data))
+    ax.set(ylabel=ylabel if ylabel is not None else _data_name(y_data))
 
     ax.grid(True)
 
@@ -95,10 +114,10 @@ def _plot_errorbar(
 def data(
     x_data,
     y_data,
-    error,
+    error: Any | tuple[Any],
     fmt=".",
-    noshow=False,
-    saveto: Path = None,
+    noshow=False,           # don't show the plot
+    saveto: Path = None,    # custom save path
     label: str = None,
     xlabel: str = None,
     ylabel: str = None,
@@ -106,12 +125,17 @@ def data(
     **kwargs
 ) -> tuple[Figure, Any]:
     """
-    Plot data with errors.
+    Plot data with errors. Accepts multiple `y_data` asociated with the same
+    `x_data`, if that is the case, the plot will have as many rows as there are
+    elements in `y_data`
+    . `error` can be either the error in `y_data` or a tuple containing
+    the errors in `x_data` and `y_data`, i.e. `(x_err, y_err)`
     """
 
     # There may be multiple y_data
     # if y_data is a list of y_datas, create a subplot with as many rows as
     # there are elements in the list.
+
     rows = 1 if not isinstance(y_data, list) else len(y_data)
     cols = 1
 
@@ -124,16 +148,10 @@ def data(
     )
 
     if rows == 1:
-        # error may be (x_err, y_err) or just y_err
-        xerr, yerr = error if isinstance(error, tuple) else None, error
-
-        xlabel = xlabel if xlabel is not None else x_data.name
-        ylabel = ylabel if ylabel is not None else y_data.name
-
         _plot_errorbar(
             ax,
             x_data, y_data,
-            xerr, yerr,
+            error,
             fmt, label, xlabel, ylabel
         )
 
@@ -142,17 +160,14 @@ def data(
         logger.warning(f"Plotting {rows} rows.")
 
         for i in range(rows):
-            # error may be (x_err, y_err) or just y_err
-            err = error[i]
-            xerr, yerr = err if isinstance(err[i], tuple) else None, err
-
             _plot_errorbar(
                 ax[i],
                 x_data[i], y_data[i],
-                xerr, yerr,
+                error[i],
                 fmt, label, xlabel, ylabel
             )
 
+    # noshow is useful if wanting to add something to ax later in the code
     if not noshow:
         save(saveto)
 
@@ -177,8 +192,8 @@ def data_and_fit(
     Plot data, fit and residue.
     """
 
-    xlabel = xlabel if xlabel is not None else x_data.name
-    ylabel = ylabel if ylabel is not None else y_data.name
+    xlabel = xlabel if xlabel is not None else _data_name(x_data)
+    ylabel = ylabel if ylabel is not None else _data_name(y_data)
 
     fig, ax = data(
         x_data,

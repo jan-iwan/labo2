@@ -22,11 +22,13 @@ def main(path: Path, args: list[str]) -> None:
     match args:
         case "cos2":
             from src import pol_cos2
-            pol_cos2.main(path, angle, volt, error)
+            pol_cos2.main(angle, volt, error)
 
         case "fit":
+            cos2_result = path / "results/pol_cos2.csv"
+
             from src import pol_fit
-            pol_fit.main(path, angle, volt, error)
+            pol_fit.main(cos2_result, angle, volt, error)
 
         case "slider":
             from src import pol_slider

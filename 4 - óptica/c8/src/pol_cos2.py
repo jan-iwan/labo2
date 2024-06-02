@@ -1,16 +1,13 @@
 from common import plot, fit
-from pathlib import Path
 import numpy as np
 
 
-def main(path: Path, angle, volt, error) -> None:
-    f = fit.f.cos_sq
-
+def main(angle, volt, error) -> None:
     volt_fit, (p_opt, _) = fit.utils.fitnsave(
-        f,
+        fit.f.cos_sq,
         angle,
         volt,
-        p0=[1, -10 * np.pi / 180],
+        p0=[0, 1, 1, -10 * np.pi / 180],
         yerr=error
     )
 
