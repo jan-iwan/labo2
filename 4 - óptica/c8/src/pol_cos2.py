@@ -1,9 +1,11 @@
 from common import plot, fit
 import numpy as np
 
+THETA_ERROR = 1 * np.pi / 180
+
 
 def main(angle, volt, error) -> None:
-    volt_fit, (p_opt, _) = fit.utils.fitnsave(
+    volt_fit = fit.utils.fitnsave(
         fit.f.cos_sq,
         angle,
         volt,
@@ -14,6 +16,6 @@ def main(angle, volt, error) -> None:
     plot.data_and_fit(
         angle,
         volt,
-        error,
+        (THETA_ERROR, error),
         volt_fit,
     )

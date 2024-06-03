@@ -76,8 +76,9 @@ def result(
     }
 
     # Mean and error of parameters
+    # "avg+-err" notation, it is very easy to parse later
     params = {
-        p: f"{opt} ± {err}"
+        p: f"{opt}+-{err}"
         for p, opt, err
         in zip(func.params, p_opt, p_err)
     }
@@ -105,6 +106,9 @@ def fitnsave(
     Returns y_fit and (param_opt, param_err)
     """
 
+    if func is not f.linear and p0 is None:
+        logger.warning("Passing no initial parametera for non linear function")
+
     p_opt, p_err = find(
         func,
         x_data,
@@ -115,17 +119,22 @@ def fitnsave(
 
     y_fit = func.f(x_data, *p_opt)
 
-    residue = y_fit - y_data
+    fit_func = f.EvalFunction(
+        func,
+        p_opt,
+        p_err,
+        y_fit - y_data
+    )
 
     # chi squared is only relevant for lineal fits
     chi_sq_red = chi2_r(
-        residue,
+        fit_func.residue,
         yerr,
-        len(residue),
+        len(fit_func.residue),
         len(p_opt)
     ) if func is f.linear else None
 
-    r_sq = r2(y_data, residue)
+    r_sq = r2(y_data, fit_func.residue)
 
     res = result(
         func,
@@ -138,4 +147,4 @@ def fitnsave(
     # Save result to disk
     data.save(res, filename=saveto)
 
-    return y_fit, (p_opt, p_err)
+    return fit_func

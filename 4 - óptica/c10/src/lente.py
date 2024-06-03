@@ -1,7 +1,4 @@
 from common import data, plot, fit
-import matplotlib.pyplot as plt
-from pathlib import Path
-import numpy as np
 
 CELL_RANGE = "D4:E22"
 WORKSHEET = "ECUACIÓN DE LA LENTE"
@@ -15,11 +12,9 @@ WORKSHEET = "ECUACIÓN DE LA LENTE"
 # m = 1, b = 1/f
 
 
-def main(path: Path, args: list[str]) -> None:
+def main(args: list[str]) -> None:
     # Find dataframe
     df = data.find(
-        path,
-        __name__,
         wsname=WORKSHEET,
         cellrange=CELL_RANGE
     )
@@ -38,10 +33,8 @@ def main(path: Path, args: list[str]) -> None:
 
     indirect_err = error_img / img ** 2
 
-    f = fit.f.linear
-
-    y_fit, _ = fit.utils.fitnsave(
-        f,
+    fit_func = fit.utils.fitnsave(
+        fit.f.linear,
         inv_obj,
         inv_img,
         yerr=indirect_err
@@ -51,7 +44,7 @@ def main(path: Path, args: list[str]) -> None:
         inv_obj,
         inv_img,
         indirect_err,
-        y_fit,
+        fit_func,
         xlabel=r"Inversa de la posición del objeto [m$^{-1}$]",
         ylabel=r"Inversa de la posición de la imagen [m$^{-1}$]",
     )

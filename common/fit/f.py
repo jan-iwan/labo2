@@ -18,6 +18,24 @@ class Function:
         self.eq = eq
 
 
+class EvalFunction:
+    """
+    Evaluable function, i.e. Function class together with numeric parameters
+    """
+
+    def __init__(
+        self,
+        func: Function,
+        params: list[float],
+        p_err: list[float],
+        residue: list[float]
+    ):
+        self.func = func
+        self.params = params
+        self.p_err = p_err
+        self.residue = residue
+
+
 linear = Function(
     lambda x, m, b:
         m * x + b,

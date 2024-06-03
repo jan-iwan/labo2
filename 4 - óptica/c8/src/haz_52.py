@@ -1,16 +1,12 @@
 from common import data, plot, fit
-from pathlib import Path
-import numpy as np
 
 CELL_RANGE = "A2:E21"
 WORKSHEET = "PERFIL 0.52m"
 
 
-def main(path: Path, erf) -> None:
+def main(erf) -> None:
     # Find dataframe
     df = data.find(
-        path,
-        __name__,
         wsname=WORKSHEET,
         cellrange=CELL_RANGE
     )
@@ -19,7 +15,7 @@ def main(path: Path, erf) -> None:
     volt = df["Voltaje [V]"]
     error = df["Error intens"]
 
-    fit_found, _ = fit.utils.fitnsave(
+    fit_found = fit.utils.fitnsave(
         erf,
         pos,
         volt,

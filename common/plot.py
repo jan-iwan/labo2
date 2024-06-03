@@ -1,4 +1,4 @@
-from common.data import get_caller_name
+from common import utils, fit
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,11 +9,12 @@ from matplotlib.figure import Figure
 from typing import Any
 from pathlib import Path
 
-SAVE_DIR = "plots"
+PLOTS_DIR = "plots"
 
 DEFAULT_EXT = "png"
 
 DEFAULT_FIGSIZE = (8, 6)
+DPI = 100
 
 logger = logging.getLogger(__name__)
 
@@ -31,21 +32,21 @@ def save(
 
     # Default save location
     if filename is None:
-        path, name = get_caller_name()
+        path, name = utils.get_caller_name()
 
         stem = f"{name}.{DEFAULT_EXT}"
 
-        filename = path / SAVE_DIR / stem
+        filename = path / PLOTS_DIR / stem
 
     if append is not None:
         filename = filename.parent / \
             f"{filename.stem}-{append}{filename.suffix}"
 
-    logger.info(f"Saving figure '{filename}'.")
+    logger.info(f"Saving figure at '{filename}'.")
     plt.savefig(filename, **kwargs)
 
     if opt_show_plots:
-        logger.info("Showing plot")
+        logger.info(f"Showing plot for '{filename.stem}'.")
         plt.show()
 
     plt.close()
@@ -71,7 +72,7 @@ def get_units(label: str) -> str:
         return ""
 
 
-def _data_name(data):
+def _data_name(data) -> str | None:
     if isinstance(data, Series):
         return data.name
 
@@ -148,6 +149,7 @@ def data(
     )
 
     if rows == 1:
+        logger.debug("Plotting data")
         _plot_errorbar(
             ax,
             x_data, y_data,
@@ -157,7 +159,7 @@ def data(
 
     # There may be multiple y_data
     else:
-        logger.warning(f"Plotting {rows} rows.")
+        logger.info(f"Plotting {rows} rows.")
 
         for i in range(rows):
             _plot_errorbar(
@@ -178,7 +180,7 @@ def data_and_fit(
     x_data,
     y_data,
     error,
-    y_fit,
+    fit_func: fit.f.EvalFunction,
     noshow=False,
     saveto: Path = None,
     datalabel: str = "Mediciones",
@@ -206,9 +208,23 @@ def data_and_fit(
         **kwargs,
     )
 
+    # If function is linear, use only 2 points for y_fit
+    if fit_func.func is fit.f.linear:
+        x_fit = np.array([min(x_data), max(x_data)])
+
+    # else, create a higher resolution y_fit
+    else:
+        # Number of points depends on plot width
+        n_points = DEFAULT_FIGSIZE[0] * DPI
+        logger.info(f"Using {n_points} points to plot fit.")
+
+        x_fit = np.linspace(min(x_data), max(x_data), n_points)
+
+    y_fit = fit_func.func.f(x_fit, *fit_func.params)
+
     # Plot fit in 'ax' (on top of the data)
     ax.plot(
-        x_data,
+        x_fit,
         y_fit,
         label=fitlabel
     )
@@ -227,7 +243,7 @@ def data_and_fit(
 
     ax_res.errorbar(
         x_data,
-        y_fit - y_data,  # residue
+        fit_func.residue,
         yerr=error[1] if isinstance(error, tuple) else error,
         fmt=".")
 

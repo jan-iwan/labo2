@@ -1,17 +1,13 @@
 from common import data, plot, fit
-import matplotlib.pyplot as plt
-from pathlib import Path
 import numpy as np
 
 CELL_RANGE = "A1:E10"
 WORKSHEET = "APERTURA NUMÉRICA"
 
 
-def main(path: Path, args: list[str]) -> None:
+def main(args: list[str]) -> None:
     # Find dataframe
     df = data.find(
-        path,
-        __name__,
         wsname=WORKSHEET,
         cellrange=CELL_RANGE
     )
@@ -22,10 +18,8 @@ def main(path: Path, args: list[str]) -> None:
 
     area = np.pi * (diametro / 2) ** 2
 
-    f = fit.f.linear
-
-    fit_found, _ = fit.utils.fitnsave(
-        f,
+    fit_func = fit.utils.fitnsave(
+        fit.f.linear,
         area,
         intensidad,
         yerr=error
@@ -35,5 +29,5 @@ def main(path: Path, args: list[str]) -> None:
         area,
         intensidad,
         error,
-        fit_found,
+        fit_func,
     )

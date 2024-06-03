@@ -1,4 +1,3 @@
-from pathlib import Path
 from common import fit
 from scipy.special import erf
 import numpy as np
@@ -17,15 +16,15 @@ def erf_gen(A):
     )
 
 
-def main(path: Path, args: list[str]) -> None:
+def main(args: list[str]) -> None:
     match args:
         case "1":
             from src import haz_52
-            haz_52.main(path, erf_gen(A52))
+            haz_52.main(erf_gen(A52))
 
         case "2":
             from src import haz_37
-            haz_37.main(path, erf_gen(A37))
+            haz_37.main(erf_gen(A37))
 
         case _:
             print("No argument passed!")

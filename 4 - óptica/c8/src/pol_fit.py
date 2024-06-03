@@ -7,13 +7,15 @@ import sys
 
 logger = logging.getLogger("MAIN")
 
+THETA_ERROR = 0.5 * np.pi / 180
 
-# df entries are "avg +- err", I want avg, err
+
+# df entries are "avg+-err", I want avg, err
 def read_entry(df_entry: str):
-    entry_as_list = df_entry.split(" ")
+    entry_as_list = df_entry.split("+-")
 
     avg = float(entry_as_list[0])
-    err = float(entry_as_list[-1])
+    err = float(entry_as_list[1])
 
     return avg, err
 
@@ -41,7 +43,7 @@ def indirect_measure(df, t, t_err):
     return cos2, sigma
 
 
-def main(cos2_result: Path, theta, volt, theta_error) -> None:
+def main(cos2_result: Path, theta, volt, volt_error) -> None:
     if not cos2_result.is_file:
         logger.error(f"File {cos2_result} does not exist.")
 
@@ -49,21 +51,20 @@ def main(cos2_result: Path, theta, volt, theta_error) -> None:
 
     result_df = pd.read_csv(cos2_result)
 
-    cos2, error = indirect_measure(
-        result_df, theta.to_numpy(), theta_error.to_numpy()
-    )
+    cos2, error = indirect_measure(result_df, theta, THETA_ERROR)
 
-    volt_fit, _ = fit.utils.fitnsave(
+    cos2_fit = fit.utils.fitnsave(
         fit.f.linear,
-        cos2,
         volt,
+        cos2,
         yerr=error
     )
 
     plot.data_and_fit(
-        cos2,
         volt,
-        error,
-        volt_fit,
-        ylabel="Coseno cuadrado del ángulo"
+        cos2,
+        (volt_error, error),
+        cos2_fit,
+        xlabel="Tensión medida [V]",
+        ylabel="Coseno cuadrado del ángulo",
     )

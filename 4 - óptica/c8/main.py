@@ -22,7 +22,7 @@ def main() -> None:
 
         case "haz":
             from src import haz
-            haz.main(base_path, arg)
+            haz.main(arg)
 
         case _:
             logger.error("Invalid argument")

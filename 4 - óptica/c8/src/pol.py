@@ -9,8 +9,6 @@ WORKSHEET = "DETECTOR"
 def main(path: Path, args: list[str]) -> None:
     # Find dataframe
     df = data.find(
-        path,
-        __name__,
         wsname=WORKSHEET,
         cellrange=CELL_RANGE
     )

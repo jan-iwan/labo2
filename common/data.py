@@ -1,11 +1,12 @@
 from pathlib import Path
 import pandas as pd
 import logging
-import inspect
-import os
+from common import utils
 
 # data
 logger = logging.getLogger(__name__)
+
+DATA_DIR = "data"
 
 opt_regen_sheets = False
 opt_show_dataframe = False
@@ -43,8 +44,8 @@ def generate(
 
 
 def find(
-    path: Path,             # e.g. "exp1"
-    name: str,              # Usually __name__
+    # path: Path,             # e.g. "exp1"
+    # name: str,              # Usually __name__
     wsname: str = None,     # Worksheet name
     cellrange: str = None,  # e.g. "A2:C41"
     local: bool = False     # True if Sheet is not expected to exist
@@ -56,8 +57,14 @@ def find(
     worksheet named the same as `module`.
     """
 
+    # Path and filename of the calling script
+    path, name = utils.get_caller_name()
+    stem = name + ".csv"
+
     # Where the dataframe should be stored
-    csv_file = path/f"data/{name}.csv"
+    csv_file = path / DATA_DIR / stem
+
+    logger.info(f"Searching for data file '{csv_file}'.")
 
     df: pd.DataFrame
 
@@ -68,7 +75,8 @@ def find(
 
         else:
             logger.info(
-                f"Found '{csv_file}'. Using gspread since '-R' was passed.")
+                f"Found file for '{stem}'. Using gspread anyways since '-R' was passed."
+            )
 
         # Create dataframe
         df = generate(
@@ -108,7 +116,7 @@ def save(
     df = pd.DataFrame(data)
 
     if filename is None:
-        path, name = get_caller_name()
+        path, name = utils.get_caller_name()
 
         filename = path / f"results/{name}.csv"
 
@@ -134,23 +142,3 @@ def save(
     #     logger.warning("Uploading to Google Sheets.")
 
     #     from common import sheets
-
-
-def get_caller_name():
-    # Get the current stack frame
-    stack = inspect.stack()
-
-    # Find stack frame for the calling script
-    for frame in stack:
-        frame_path = os.path.abspath(inspect.getframeinfo(frame[0]).filename)
-
-        if frame_path.find("common") == -1:
-            path = Path(frame_path)
-            parent = path.parent
-
-            if path.parent.name == "src":
-                parent = parent.parent
-
-            return (parent, path.stem)
-
-    return None
