@@ -1,4 +1,4 @@
-Area del diafrágma  (m*2),apertura del diafragma (0.02mm),Intensidad [lx],Error [lx],Voltaje (V)
+Area del diafrágma  [m^2],apertura del diafragma [mm],Intensidad [lx],Error [lx],Voltaje (V)
 3.782760298e-05,6.94,33.1,1.0,0.01956264775
 5.489116348e-05,8.36,37.6,1.0,0.02222222222
 8.462225388e-05,10.38,44.6,1.0,0.02635933806

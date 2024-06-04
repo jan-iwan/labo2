@@ -9,22 +9,24 @@ from matplotlib.figure import Figure
 from typing import Any
 from pathlib import Path
 
+ArrayLike = np._typing.ArrayLike
+
 PLOTS_DIR = "plots"
-
 DEFAULT_EXT = "png"
-
 DEFAULT_FIGSIZE = (8, 6)
 DPI = 100
+FONT_SIZE = 18
+DEFAULT_FMT = "o"
 
 logger = logging.getLogger(__name__)
 
 opt_show_plots = False
 
-plt.rcParams.update({"font.size": 14})
+plt.rcParams.update({"font.size": FONT_SIZE})
 
 
 def save(
-    filename,
+    filename: Path = None,
     append: str = None,
     **kwargs
 ):
@@ -89,19 +91,33 @@ def _plot_errorbar(
     fmt,
     label,
     xlabel,
-    ylabel
+    ylabel,
+    index=None
 ):
     # error may be (x_err, y_err) or just y_err
     (xerr, yerr) = error if isinstance(error, tuple) else (None, error)
 
-    ax.errorbar(
-        x_data,
-        y_data,
-        xerr=xerr,
-        yerr=yerr,
-        fmt=fmt,
-        label=label
-    )
+    # Simple plot
+    if index is None:
+        ax.errorbar(
+            x_data,
+            y_data,
+            xerr=xerr,
+            yerr=yerr,
+            fmt=fmt,
+            label=label
+        )
+
+    # Index into set of data
+    else:
+        ax[index].errorbar(
+            x_data,
+            y_data[i],
+            xerr=xerr,
+            yerr=yerr[index],
+            fmt=fmt,
+            label=label
+        )
 
     ax.set(xlabel=xlabel if xlabel is not None else _data_name(x_data))
     ax.set(ylabel=ylabel if ylabel is not None else _data_name(y_data))
@@ -113,31 +129,38 @@ def _plot_errorbar(
 
 
 def data(
-    x_data,
-    y_data,
+    x_data: Any,
+    y_data: Any | list[Any],
     error: Any | tuple[Any],
-    fmt=".",
-    noshow=False,           # don't show the plot
-    saveto: Path = None,    # custom save path
+    fmt=DEFAULT_FMT,
     label: str = None,
     xlabel: str = None,
     ylabel: str = None,
     figsize=DEFAULT_FIGSIZE,
+    noshow=False,           # don't show the plot
+    saveto: Path = None,    # custom save path
+    separate_rows=False,    # use a different row for each plot if provided
     **kwargs
 ) -> tuple[Figure, Any]:
     """
     Plot data with errors. Accepts multiple `y_data` asociated with the same
-    `x_data`, if that is the case, the plot will have as many rows as there are
-    elements in `y_data`
-    . `error` can be either the error in `y_data` or a tuple containing
-    the errors in `x_data` and `y_data`, i.e. `(x_err, y_err)`
+    `x_data` (i.e. multiple sets of data), if that is the case, either all sets
+    of data will be plotted together or each one will be in a separate row.
+    `error` can be either the error in `y_data` or a tuple containing
+    the errors in `x_data` and `y_data`, i.e. `(x_err, y_err)`. If `y_data` is a
+    list of y_datas, y_err shuold be a list as well.
     """
 
     # There may be multiple y_data
-    # if y_data is a list of y_datas, create a subplot with as many rows as
-    # there are elements in the list.
+    multiplot = False if not isinstance(y_data, list) else len(y_data)
 
-    rows = 1 if not isinstance(y_data, list) else len(y_data)
+    if not multiplot and separate_rows:
+        logger.warning(
+            "Specified separate rows but there is only one set of data"
+        )
+
+    # if specified separate_rows, plot
+    rows = 1 if not multiplot or not separate_rows else multiplot
     cols = 1
 
     fig, ax = plt.subplots(
@@ -148,28 +171,45 @@ def data(
         **kwargs
     )
 
+    # Simple plot for only one set of data
     if rows == 1:
-        logger.debug("Plotting data")
-        _plot_errorbar(
-            ax,
-            x_data, y_data,
-            error,
-            fmt, label, xlabel, ylabel
-        )
+        if not multiplot:
+            logger.info("Plotting data.")
 
-    # There may be multiple y_data
+            _plot_errorbar(
+                ax,
+                x_data, y_data,
+                error,
+                fmt, label, xlabel, ylabel
+            )
+
+        # There are multiple y_data, plot them together
+        else:
+            logger.info(f"Plotting {len(y_data)} sets of data.")
+
+            for i in range(multiplot):
+                _plot_errorbar(
+                    ax,
+                    x_data, y_data,
+                    error,
+                    fmt, label, xlabel, ylabel,
+                    index=i
+                )
+
+    # There may be multiple y_data, plot them in separate rows
     else:
         logger.info(f"Plotting {rows} rows.")
 
         for i in range(rows):
             _plot_errorbar(
-                ax[i],
-                x_data[i], y_data[i],
-                error[i],
-                fmt, label, xlabel, ylabel
+                ax,
+                x_data, y_data,
+                error,
+                fmt, label, xlabel, ylabel,
+                index=i
             )
 
-    # noshow is useful if wanting to add something to ax later in the code
+    # noshow is useful if wanting to add something to the plot
     if not noshow:
         save(saveto)
 
@@ -177,21 +217,24 @@ def data(
 
 
 def data_and_fit(
-    x_data,
-    y_data,
-    error,
+    x_data: Any,
+    y_data: Any,
+    error: Any | tuple[Any],
     fit_func: fit.f.EvalFunction,
-    noshow=False,
-    saveto: Path = None,
+    fmt=DEFAULT_FMT,
+    figsize=DEFAULT_FIGSIZE,
     datalabel: str = "Mediciones",
     fitlabel: str = "Ajuste",
     xlabel: str = None,
     ylabel: str = None,
-    figsize=DEFAULT_FIGSIZE,
+    residue_units: tuple[float, str] = None,
+    noshow=False,
+    saveto: Path = None,
     **kwargs
 ):
     """
-    Plot data, fit and residue.
+    Plot data, fit and residue. Works similar to `plot.data()` except that
+    `y_data` may only contain a single array of data.
     """
 
     xlabel = xlabel if xlabel is not None else _data_name(x_data)
@@ -205,6 +248,7 @@ def data_and_fit(
         label=datalabel,
         xlabel=xlabel,
         ylabel=ylabel,
+        fmt=fmt,
         **kwargs,
     )
 
@@ -241,13 +285,24 @@ def data_and_fit(
         figsize=DEFAULT_FIGSIZE
     )
 
+    yerr = error[1] if isinstance(error, tuple) else error
+
+    if residue_units is None:
+        # Use units from ylabel
+        ylabel = f"Residuos {get_units(ylabel)}"
+
+    else:
+        # Change units for residue
+        fit_func.residue *= residue_units[0]
+        yerr *= residue_units[0]
+
+        ylabel = f"Residuos [{residue_units[1]}]"
+
     ax_res.errorbar(
         x_data,
         fit_func.residue,
-        yerr=error[1] if isinstance(error, tuple) else error,
-        fmt=".")
-
-    ylabel = f"Residuos {get_units(ylabel)}"
+        yerr=yerr,
+        fmt=fmt)
 
     ax_res.set(xlabel=xlabel)
     ax_res.set(ylabel=ylabel)
@@ -272,6 +327,7 @@ def data_polar(
     figsize=DEFAULT_FIGSIZE,
     rorigin=None,
     rlabel=None,
+    fmt=DEFAULT_FMT,
     **kwargs
 ):
     """
@@ -289,7 +345,7 @@ def data_polar(
         r_data,
         xerr=terr,
         yerr=rerr,
-        fmt=".",
+        fmt=fmt,
         label=label
     )
 

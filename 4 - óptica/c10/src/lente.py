@@ -11,6 +11,8 @@ WORKSHEET = "ECUACIÓN DE LA LENTE"
 # (1/img) = 1(1/obj) + 1/f
 # m = 1, b = 1/f
 
+ERR_IMG = 5
+
 
 def main(args: list[str]) -> None:
     # Find dataframe
@@ -25,13 +27,11 @@ def main(args: list[str]) -> None:
     img = df["Posición de la pantalla [mm]"]
     img -= lente
 
-    error_img = 15
-
-    # Multiply by 1000 to convert mm -> m
+    # Multiply by 1000 to convert 1/mm -> 1/m
     inv_obj = 1000 / obj
     inv_img = 1000 / img
 
-    indirect_err = error_img / img ** 2
+    indirect_err = 1000 * ERR_IMG / img ** 2
 
     fit_func = fit.utils.fitnsave(
         fit.f.linear,
@@ -47,4 +47,5 @@ def main(args: list[str]) -> None:
         fit_func,
         xlabel=r"Inversa de la posición del objeto [m$^{-1}$]",
         ylabel=r"Inversa de la posición de la imagen [m$^{-1}$]",
+        fmt="o"
     )

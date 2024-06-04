@@ -20,12 +20,18 @@ def main(erf) -> None:
         pos,
         volt,
         yerr=error,
-        p0=[100]
+        p0=[9.85, 100]
     )
 
+    pos_0 = fit_found.params[0]
+
+    # Normalize
+    fit_found.params[0] = 0
+
     plot.data_and_fit(
-        pos,
+        pos - pos_0,
         volt,
         error,
         fit_found,
+        residue_units=(1000, "mVpp")
     )

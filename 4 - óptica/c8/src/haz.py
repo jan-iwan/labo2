@@ -10,9 +10,9 @@ A37 = 40826.839434 / (2 * 38424)
 
 def erf_gen(A):
     return fit.f.Function(
-        lambda x, w:
-            A * (1 - erf((np.sqrt(2) * x) / w)),
-        ["w"]
+        lambda x, x_0, w:
+            A * (1 - erf(np.sqrt(2) * (x - x_0) / w)),
+        ["x_0", "w"]
     )
 
 

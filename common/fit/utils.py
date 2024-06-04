@@ -100,7 +100,7 @@ def fitnsave(
     saveto: Path | str = None,
     p0=None,
     yerr=None
-):
+) -> f.EvalFunction:
     """
     Fit a function to data and save results.
     Returns y_fit and (param_opt, param_err)
