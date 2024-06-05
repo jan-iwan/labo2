@@ -3,6 +3,8 @@ from common import data, plot, fit
 CELL_RANGE = "A2:E21"
 WORKSHEET = "PERFIL 0.52m"
 
+A52 = 35193.929024 / 38424
+
 
 def main(erf) -> None:
     # Find dataframe
@@ -20,7 +22,7 @@ def main(erf) -> None:
         pos,
         volt,
         yerr=error,
-        p0=[9.85, 100]
+        p0=[9.85, 0.6]
     )
 
     pos_0 = fit_found.params[0]

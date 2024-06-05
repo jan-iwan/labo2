@@ -85,39 +85,20 @@ def _data_name(data) -> str | None:
 
 def _plot_errorbar(
     ax,
-    x_data,
-    y_data,
-    error,
-    fmt,
-    label,
-    xlabel,
-    ylabel,
-    index=None
+    x_data, y_data,
+    xerr, yerr,
+    fmt, label, xlabel, ylabel
 ):
-    # error may be (x_err, y_err) or just y_err
-    (xerr, yerr) = error if isinstance(error, tuple) else (None, error)
 
     # Simple plot
-    if index is None:
-        ax.errorbar(
-            x_data,
-            y_data,
-            xerr=xerr,
-            yerr=yerr,
-            fmt=fmt,
-            label=label
-        )
-
-    # Index into set of data
-    else:
-        ax[index].errorbar(
-            x_data,
-            y_data[i],
-            xerr=xerr,
-            yerr=yerr[index],
-            fmt=fmt,
-            label=label
-        )
+    ax.errorbar(
+        x_data,
+        y_data,
+        xerr=xerr,
+        yerr=yerr,
+        fmt=fmt,
+        label=label
+    )
 
     ax.set(xlabel=xlabel if xlabel is not None else _data_name(x_data))
     ax.set(ylabel=ylabel if ylabel is not None else _data_name(y_data))
@@ -128,18 +109,47 @@ def _plot_errorbar(
         ax.legend()
 
 
+def _plot_smooth(
+    ax,
+    x_data, y_data,
+    xerr, yerr,
+    fmt, label, xlabel, ylabel
+):
+    # Simple plot
+    ax.plot(
+        x_data,
+        y_data,
+        label=label
+    )
+
+    ax.set(xlabel=xlabel if xlabel is not None else _data_name(x_data))
+    ax.set(ylabel=ylabel if ylabel is not None else _data_name(y_data))
+
+    ax.grid(True)
+
+    if label is not None:
+        ax.legend()
+
+
+plot_functions = {
+    "errorbar": _plot_errorbar,
+    "smooth": _plot_smooth,
+}
+
+
 def data(
     x_data: Any,
     y_data: Any | list[Any],
     error: Any | tuple[Any],
     fmt=DEFAULT_FMT,
-    label: str = None,
+    label: str | list[str] = None,
     xlabel: str = None,
     ylabel: str = None,
     figsize=DEFAULT_FIGSIZE,
     noshow=False,           # don't show the plot
     saveto: Path = None,    # custom save path
     separate_rows=False,    # use a different row for each plot if provided
+    plot_method: str = "errorbar",
     **kwargs
 ) -> tuple[Figure, Any]:
     """
@@ -171,15 +181,23 @@ def data(
         **kwargs
     )
 
+    # error may be (x_err, y_err) or just y_err
+    (xerr, yerr) = error if isinstance(error, tuple) else (None, error)
+
+    if yerr is None:
+        yerr = [0 for _ in range(multiplot)] if multiplot else 0
+
+    plot_function = plot_functions[plot_method]
+
     # Simple plot for only one set of data
     if rows == 1:
         if not multiplot:
             logger.info("Plotting data.")
 
-            _plot_errorbar(
+            plot_function(
                 ax,
                 x_data, y_data,
-                error,
+                xerr, yerr,
                 fmt, label, xlabel, ylabel
             )
 
@@ -188,12 +206,13 @@ def data(
             logger.info(f"Plotting {len(y_data)} sets of data.")
 
             for i in range(multiplot):
-                _plot_errorbar(
+                lab = label[i] if isinstance(label, list) else label
+
+                plot_function(
                     ax,
-                    x_data, y_data,
-                    error,
-                    fmt, label, xlabel, ylabel,
-                    index=i
+                    x_data, y_data[i],
+                    xerr, yerr[i],
+                    fmt, lab, xlabel, ylabel
                 )
 
     # There may be multiple y_data, plot them in separate rows
@@ -201,12 +220,11 @@ def data(
         logger.info(f"Plotting {rows} rows.")
 
         for i in range(rows):
-            _plot_errorbar(
-                ax,
-                x_data, y_data,
-                error,
-                fmt, label, xlabel, ylabel,
-                index=i
+            plot_function(
+                ax[i],
+                x_data, y_data[i],
+                xerr, yerr[i],
+                fmt, label, xlabel, ylabel
             )
 
     # noshow is useful if wanting to add something to the plot

@@ -16,7 +16,7 @@ def erf_gen(A):
     )
 
 
-def main(args: list[str]) -> None:
+def main(path, args: list[str]) -> None:
     match args:
         case "1":
             from src import haz_52
@@ -25,6 +25,10 @@ def main(args: list[str]) -> None:
         case "2":
             from src import haz_37
             haz_37.main(erf_gen(A37))
+
+        case "comp":
+            from src import haz_comparacion
+            haz_comparacion.main(path)
 
         case _:
             print("No argument passed!")

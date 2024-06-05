@@ -142,3 +142,8 @@ def save(
     #     logger.warning("Uploading to Google Sheets.")
 
     #     from common import sheets
+
+
+# def read_result(
+#     name
+# ) -> pd.DataFrame:

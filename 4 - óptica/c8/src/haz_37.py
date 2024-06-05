@@ -3,6 +3,8 @@ from common import data, plot, fit
 CELL_RANGE = "A2:E16"
 WORKSHEET = "BIENPERFIL 0.37m"
 
+A37 = 40826.839434 / 38424
+
 
 def main(erf) -> None:
     # Find dataframe
