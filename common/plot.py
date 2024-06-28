@@ -245,6 +245,7 @@ def data_and_fit(
     fitlabel: str = "Ajuste",
     xlabel: str = None,
     ylabel: str = None,
+    units: float = None,
     residue_units: tuple[float, str] = None,
     noshow=False,
     saveto: Path = None,
@@ -254,6 +255,11 @@ def data_and_fit(
     Plot data, fit and residue. Works similar to `plot.data()` except that
     `y_data` may only contain a single array of data.
     """
+
+    if units is not None:
+        if ylabel is None:
+            logger.warning("Did not change ylabel to accomodate for units.")
+        y_data *= units
 
     xlabel = xlabel if xlabel is not None else _data_name(x_data)
     ylabel = ylabel if ylabel is not None else _data_name(y_data)
@@ -283,6 +289,9 @@ def data_and_fit(
         x_fit = np.linspace(min(x_data), max(x_data), n_points)
 
     y_fit = fit_func.func.f(x_fit, *fit_func.params)
+
+    if units is not None:
+        y_fit *= units
 
     # Plot fit in 'ax' (on top of the data)
     ax.plot(
